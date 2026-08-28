@@ -46,6 +46,7 @@ const rawEnvSchema = z.object({
   INSTAGRAM_PAGE_ACCESS_TOKEN: optionalSecret,
   INSTAGRAM_WEBHOOK_VERIFY_TOKEN: optionalSecret,
   INSTAGRAM_BUSINESS_ACCOUNT_ID: optionalSecret,
+  INBOUND_POLL_SECONDS: z.coerce.number().int().min(60).default(300),
   INSTAGRAM_GRAPH_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v25.0"),
   MAX_DMS_PER_DAY: z.coerce.number().int().positive().default(30),
   MIN_SECONDS_BETWEEN_DMS: z.coerce.number().int().positive().default(90),
@@ -85,6 +86,7 @@ export interface AppEnv {
   readonly instagramWebhookVerifyToken?: string;
   readonly instagramBusinessAccountId?: string;
   readonly instagramGraphApiVersion: string;
+  readonly inboundPollSeconds: number;
   readonly maxDmsPerDay: number;
   readonly minSecondsBetweenDms: number;
   readonly maxSecondsBetweenDms: number;
@@ -128,6 +130,7 @@ export function loadEnv(source: Readonly<Record<string, string | undefined>>): A
     instagramWebhookVerifyToken: env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN,
     instagramBusinessAccountId: env.INSTAGRAM_BUSINESS_ACCOUNT_ID,
     instagramGraphApiVersion: env.INSTAGRAM_GRAPH_API_VERSION,
+    inboundPollSeconds: env.INBOUND_POLL_SECONDS,
     maxDmsPerDay: env.MAX_DMS_PER_DAY,
     minSecondsBetweenDms: env.MIN_SECONDS_BETWEEN_DMS,
     maxSecondsBetweenDms: env.MAX_SECONDS_BETWEEN_DMS,

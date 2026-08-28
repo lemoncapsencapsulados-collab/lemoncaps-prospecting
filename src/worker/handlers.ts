@@ -45,6 +45,7 @@ const payloadSchemas = {
   adapt_strategy: z.object({ experimentId: correlationText }).strict(),
   backup_database: z.object({ destination: z.string().trim().min(1) }).strict(),
   check_integrations: z.object({}).strict(),
+  poll_inbound: z.object({}).strict(),
 } as const;
 
 export type QualifyLeadPayload = z.infer<(typeof payloadSchemas)["qualify_lead"]>;
@@ -56,6 +57,7 @@ export type EvaluateFollowUpPayload = z.infer<(typeof payloadSchemas)["evaluate_
 export type ExperimentJobPayload = z.infer<(typeof payloadSchemas)["measure_experiment"]>;
 export type BackupDatabasePayload = z.infer<(typeof payloadSchemas)["backup_database"]>;
 export type CheckIntegrationsPayload = z.infer<(typeof payloadSchemas)["check_integrations"]>;
+export type PollInboundPayload = z.infer<(typeof payloadSchemas)["poll_inbound"]>;
 
 export interface JobOperations {
   qualifyLead(payload: QualifyLeadPayload, job: JobRecord): void | Promise<void>;
@@ -68,6 +70,7 @@ export interface JobOperations {
   adaptStrategy(payload: ExperimentJobPayload, job: JobRecord): void | Promise<void>;
   backupDatabase(payload: BackupDatabasePayload, job: JobRecord): void | Promise<void>;
   checkIntegrations(payload: CheckIntegrationsPayload, job: JobRecord): void | Promise<void>;
+  pollInbound(payload: PollInboundPayload, job: JobRecord): void | Promise<void>;
 }
 
 export interface JobHandlerDependencies {
@@ -124,6 +127,7 @@ export function createJobHandlers(dependencies: JobHandlerDependencies): JobHand
       "check_integrations",
       dependencies.operations.checkIntegrations,
     ),
+    poll_inbound: createHandler(dependencies, "poll_inbound", dependencies.operations.pollInbound),
   };
 }
 

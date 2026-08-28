@@ -8,7 +8,7 @@ import { loadBusinessConfig } from "../lib/business-config.ts";
 import { loadEnv } from "../lib/env.ts";
 import { createJobHandlers } from "./handlers.ts";
 import { runOneJob } from "./runner.ts";
-import { createRuntimeJobOperations } from "./runtime-operations.ts";
+import { createRuntimeJobOperations, scheduleNextPoll } from "./runtime-operations.ts";
 
 const env = loadEnv(process.env);
 const business = loadBusinessConfig(env.businessConfigPath);
@@ -46,6 +46,15 @@ const { prepare_first_contact, send_browser_contact, ...handlers } = createJobHa
 });
 void prepare_first_contact;
 void send_browser_contact;
+
+/*
+ * Seed the recurring inbound poll. Each run queues the next one, so the schedule
+ * lives in the job table; seeding with a past timestamp makes the first poll due
+ * immediately, and the slot-based idempotency key stops a restart from stacking
+ * duplicates.
+ */
+const pollSeedFrom = new Date(Date.now() - env.inboundPollSeconds * 1_000);
+scheduleNextPoll({ database, env }, pollSeedFrom);
 
 let stopping = false;
 process.once("SIGINT", () => {

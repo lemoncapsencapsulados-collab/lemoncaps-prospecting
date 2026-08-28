@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { AppDatabase } from "@/db/client";
 import { createTestDatabase } from "@/db/test-database";
-import type { JobRecord, JobType } from "./job-types";
+import { jobTypes, type JobRecord, type JobType } from "./job-types";
 
 import { createJobHandlers, type JobOperations } from "./handlers";
 
@@ -14,18 +14,9 @@ describe("typed durable job handlers", () => {
   it("registers every declared job type", () => {
     database = createTestDatabase();
     const handlers = createJobHandlers({ database, operations: operations() });
-    const expected: JobType[] = [
-      "qualify_lead",
-      "prepare_first_contact",
-      "send_browser_contact",
-      "interpret_inbound",
-      "send_api_response",
-      "evaluate_follow_up",
-      "measure_experiment",
-      "adapt_strategy",
-      "backup_database",
-      "check_integrations",
-    ];
+    // Derived from the declared list, so a new job type fails here until it is
+    // registered, instead of failing because this assertion went stale.
+    const expected: JobType[] = [...jobTypes];
 
     expect(Object.keys(handlers).sort()).toEqual(expected.sort());
   });
@@ -74,6 +65,7 @@ function operations(overrides: Partial<JobOperations> = {}): JobOperations {
     adaptStrategy: vi.fn(),
     backupDatabase: vi.fn(),
     checkIntegrations: vi.fn(),
+    pollInbound: vi.fn(),
     ...overrides,
   };
 }

@@ -106,22 +106,62 @@ function processMessageEvent(
   event: InstagramWebhookMessage,
   rawBody: Uint8Array,
   processedAt: Date,
-): "accepted" | "duplicates" | "unmatched" {
-  const externalEventId = event.message!.mid;
-  const payloadHash = createHash("sha256").update(rawBody).digest("hex");
+): IngestOutcome {
+  return ingestInboundMessage(
+    database,
+    {
+      externalId: event.message!.mid,
+      senderId: event.sender.id,
+      senderUsername: event.sender.username,
+      text: event.message!.text!.trim(),
+      timestamp: eventTimestamp(event, processedAt),
+      source: "webhook",
+      payloadHash: createHash("sha256").update(rawBody).digest("hex"),
+    },
+    processedAt,
+  );
+}
 
+export type IngestOutcome = "accepted" | "duplicates" | "unmatched";
+
+export interface InboundMessage {
+  readonly externalId: string;
+  readonly senderId: string;
+  readonly senderUsername?: string;
+  readonly text: string;
+  readonly timestamp: Date;
+  /** Which path delivered it, recorded in the audit trail. */
+  readonly source: "webhook" | "polling";
+  readonly payloadHash: string;
+}
+
+/**
+ * The single place an inbound Instagram message enters the system, whether the
+ * webhook pushed it or the poller pulled it. Both paths see the same message id
+ * from Meta, so the processed-event table deduplicates across them: a message
+ * already handled by one path is never handled again by the other.
+ */
+export function ingestInboundMessage(
+  database: AppDatabase,
+  message: InboundMessage,
+  processedAt: Date,
+): IngestOutcome {
   return database.sqlite.transaction(() => {
-    if (webhookWasProcessed(database, externalEventId)) return "duplicates";
+    if (webhookWasProcessed(database, message.externalId)) return "duplicates";
 
-    const timestamp = eventTimestamp(event, processedAt);
-    const match = findLeadMatch(database, event);
+    const match = findLeadMatch(database, message);
     if (!match) {
-      persistWebhookEvent(database, externalEventId, payloadHash, processedAt);
-      createUnmatchedException(database, event, processedAt);
+      persistWebhookEvent(database, message.externalId, message.payloadHash, processedAt);
+      createUnmatchedException(database, message, processedAt);
       return "unmatched";
     }
 
-    const conversationId = upsertApiConversation(database, match.id, event.sender.id, timestamp);
+    const conversationId = upsertApiConversation(
+      database,
+      match.id,
+      message.senderId,
+      message.timestamp,
+    );
     database.sqlite
       .prepare(`
         INSERT INTO messages (
@@ -133,26 +173,26 @@ function processMessageEvent(
         randomUUID(),
         match.id,
         conversationId,
-        event.message!.text!.trim(),
-        externalEventId,
-        timestamp.toISOString(),
+        message.text,
+        message.externalId,
+        message.timestamp.toISOString(),
       );
 
-    handOffLeadToApi(database, match, externalEventId, timestamp);
+    handOffLeadToApi(database, match, message, message.timestamp);
     enqueueJob(database, {
       type: "interpret_inbound",
-      payload: { leadId: match.id, messageId: externalEventId },
-      idempotencyKey: `interpret:${externalEventId}`,
-      correlationId: `webhook:${externalEventId}`,
+      payload: { leadId: match.id, messageId: message.externalId },
+      idempotencyKey: `interpret:${message.externalId}`,
+      correlationId: `${message.source}:${message.externalId}`,
       runAt: processedAt,
       maxAttempts: 3,
     });
-    persistWebhookEvent(database, externalEventId, payloadHash, processedAt);
+    persistWebhookEvent(database, message.externalId, message.payloadHash, processedAt);
     return "accepted";
   })();
 }
 
-function findLeadMatch(database: AppDatabase, event: InstagramWebhookMessage): LeadMatch | null {
+function findLeadMatch(database: AppDatabase, message: InboundMessage): LeadMatch | null {
   const byRecipient = database.sqlite
     .prepare(`
       SELECT l.id, l.pipeline_state, l.channel_state, l.channel_owner
@@ -160,15 +200,15 @@ function findLeadMatch(database: AppDatabase, event: InstagramWebhookMessage): L
       JOIN leads l ON l.id = c.lead_id
       WHERE c.meta_recipient_id = ?
     `)
-    .get(event.sender.id) as
+    .get(message.senderId) as
     | { id: string; pipeline_state: string; channel_state: string; channel_owner: string }
     | undefined;
   if (byRecipient) return mapLeadMatch(byRecipient);
 
-  if (!event.sender.username) return null;
+  if (!message.senderUsername) return null;
   let normalizedHandle: string;
   try {
-    normalizedHandle = normalizeInstagramHandle(event.sender.username);
+    normalizedHandle = normalizeInstagramHandle(message.senderUsername);
   } catch {
     return null;
   }
@@ -238,7 +278,7 @@ function upsertApiConversation(
 function handOffLeadToApi(
   database: AppDatabase,
   lead: LeadMatch,
-  externalEventId: string,
+  message: InboundMessage,
   timestamp: Date,
 ): void {
   const pipelineState = lead.pipelineState === "contacted" ? "replied" : lead.pipelineState;
@@ -265,10 +305,11 @@ function handOffLeadToApi(
       INSERT INTO audit_logs (
         id, actor, action, entity_type, entity_id, before_json, after_json,
         reason, correlation_id, created_at
-      ) VALUES (?, 'webhook', 'instagram_api_handoff', 'lead', ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, 'instagram_api_handoff', 'lead', ?, ?, ?, ?, ?, ?)
     `)
     .run(
       randomUUID(),
+      message.source,
       lead.id,
       JSON.stringify({
         pipelineState: lead.pipelineState,
@@ -277,7 +318,7 @@ function handOffLeadToApi(
       }),
       JSON.stringify({ pipelineState, channelState, channelOwner }),
       "Verified inbound reply transferred conversation ownership to the official API",
-      `webhook:${externalEventId}`,
+      `${message.source}:${message.externalId}`,
       timestamp.toISOString(),
     );
 }
@@ -306,7 +347,7 @@ function persistWebhookEvent(
 
 function createUnmatchedException(
   database: AppDatabase,
-  event: InstagramWebhookMessage,
+  message: InboundMessage,
   timestamp: Date,
 ): void {
   database.sqlite
@@ -317,9 +358,10 @@ function createUnmatchedException(
     .run(
       randomUUID(),
       JSON.stringify({
-        externalEventId: event.message!.mid,
-        senderId: event.sender.id,
-        senderUsername: event.sender.username ?? null,
+        externalEventId: message.externalId,
+        senderId: message.senderId,
+        senderUsername: message.senderUsername ?? null,
+        source: message.source,
       }),
       timestamp.toISOString(),
     );

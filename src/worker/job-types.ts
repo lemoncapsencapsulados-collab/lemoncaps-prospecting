@@ -9,6 +9,7 @@ export const jobTypes = [
   "adapt_strategy",
   "backup_database",
   "check_integrations",
+  "poll_inbound",
 ] as const;
 
 export type JobType = (typeof jobTypes)[number];

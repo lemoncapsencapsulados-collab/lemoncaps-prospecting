@@ -10,6 +10,7 @@ import { measureExperiment } from "@/features/experiments/metrics";
 import { qualifyLead, readLead } from "@/features/leads/lead-service";
 import type { BrowserClient } from "@/integrations/browser/browser-types";
 import { sendFirstContact } from "@/integrations/browser/first-contact";
+import { pollInstagramConversations } from "@/integrations/instagram/conversations-poller";
 import { sendInstagramMessage } from "@/integrations/instagram/meta-client";
 import type { DecisionModel } from "@/integrations/openai/client";
 import type { AiPricing } from "@/integrations/openai/budget";
@@ -142,6 +143,24 @@ export function createRuntimeJobOperations(
         `)
         .run(randomUUID(), result.path, result.integrityCheck, now().toISOString(), now().toISOString());
     },
+    pollInbound: async (_payload, job) => {
+      const startedAt = now();
+      try {
+        const result = await pollInstagramConversations({
+          database: dependencies.database,
+          mode: dependencies.env.instagramMode,
+          accessToken: dependencies.env.instagramPageAccessToken,
+          businessAccountId: dependencies.env.instagramBusinessAccountId,
+          apiVersion: dependencies.env.instagramGraphApiVersion,
+          now,
+        });
+        appendWorkerEvent(dependencies.database, null, "inbound.polled", result, job.correlationId, startedAt);
+      } finally {
+        // Rescheduled in `finally` so a failed poll still keeps the loop alive;
+        // the failure itself is recorded by the circuit breaker.
+        scheduleNextPoll(dependencies, startedAt);
+      }
+    },
     checkIntegrations: (_payload, job) => {
       const health = dependencies.database.sqlite
         .prepare("SELECT * FROM integration_health ORDER BY integration")
@@ -149,6 +168,27 @@ export function createRuntimeJobOperations(
       appendWorkerEvent(dependencies.database, null, "integrations.checked", { health }, job.correlationId, now());
     },
   };
+}
+
+/**
+ * Each poll queues the next one, so the recurring schedule lives in the durable
+ * job table and survives a worker restart. The timestamp in the idempotency key
+ * keeps a restart from stacking duplicate polls onto the same slot.
+ */
+export function scheduleNextPoll(
+  dependencies: Pick<RuntimeOperationDependencies, "database" | "env">,
+  from: Date,
+): void {
+  const runAt = new Date(from.getTime() + dependencies.env.inboundPollSeconds * 1_000);
+  const slot = Math.floor(runAt.getTime() / (dependencies.env.inboundPollSeconds * 1_000));
+  enqueueJob(dependencies.database, {
+    type: "poll_inbound",
+    payload: {},
+    idempotencyKey: `poll-inbound:${slot}`,
+    correlationId: `poll-inbound:${slot}`,
+    runAt,
+    maxAttempts: 3,
+  });
 }
 
 function browserLimitDecision(
