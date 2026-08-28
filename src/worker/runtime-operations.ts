@@ -27,6 +27,9 @@ export interface RuntimeOperationDependencies {
   readonly env: AppEnv;
   readonly browserClient: BrowserClient;
   readonly decisionModel: DecisionModel;
+  /** Resolved from the configured AI provider, not read from env directly. */
+  readonly aiModel: string;
+  readonly aiModelFast: string;
   readonly aiPricing: AiPricing;
   readonly projectedAiCallCostUsd: number;
   readonly workerId: string;
@@ -89,8 +92,8 @@ export function createRuntimeJobOperations(
           database: dependencies.database,
           business: dependencies.business,
           model: dependencies.decisionModel,
-          fastModel: requiredModel(dependencies.env.openAiModelFast, "OPENAI_MODEL_FAST"),
-          mainModel: requiredModel(dependencies.env.openAiModel, "OPENAI_MODEL"),
+          fastModel: dependencies.aiModelFast,
+          mainModel: dependencies.aiModel,
           monthlyBudgetUsd: dependencies.env.openAiMonthlyBudgetUsd,
           pricing: dependencies.aiPricing,
           projectedCallCostUsd: dependencies.projectedAiCallCostUsd,
@@ -264,11 +267,6 @@ function readPause(database: AppDatabase, key: string): boolean {
   } catch {
     return true;
   }
-}
-
-function requiredModel(value: string | undefined, name: string): string {
-  if (!value) throw new Error(`${name} is required for conversation jobs`);
-  return value;
 }
 
 function assertBackupDestination(destination: string): string {

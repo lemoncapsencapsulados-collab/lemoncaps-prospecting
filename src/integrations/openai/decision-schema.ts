@@ -34,7 +34,12 @@ const responseActions = new Set<string>([
   "handoff_whatsapp",
 ]);
 
-export const conversationDecisionSchema = z
+/**
+ * The plain object shape, without the cross-field rules below. Structured-output
+ * helpers convert this to JSON Schema; the refinements cannot be expressed there,
+ * so they are enforced by parsing the model's reply with the full schema.
+ */
+export const conversationDecisionObject = z
   .object({
     intent: z.enum(conversationIntents),
     action: z.enum(conversationActions),
@@ -44,7 +49,9 @@ export const conversationDecisionSchema = z
     followUpAt: z.string().datetime({ offset: true }).nullable(),
     escalationReason: z.string().trim().min(1).max(500).nullable(),
   })
-  .strict()
+  .strict();
+
+export const conversationDecisionSchema = conversationDecisionObject
   .superRefine((decision, context) => {
     if (responseActions.has(decision.action) && !decision.responseText) {
       context.addIssue({

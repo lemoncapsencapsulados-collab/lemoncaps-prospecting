@@ -8,6 +8,14 @@ Operator documentation is in Portuguese: [SETUP.md](SETUP.md).
 
 Next.js 16 (App Router) · React 19 · TypeScript strict · Tailwind 4 · SQLite (better-sqlite3, WAL) · Drizzle ORM · Node.js 24 · pnpm · Vitest.
 
+## Conversation engine
+
+Two providers implement the same `DecisionModel` interface; `AI_PROVIDER` selects one (default `anthropic`).
+`src/integrations/ai-provider.ts` is the single place that resolves the provider, its models, and its pricing,
+so the worker, the panel and the evidence script cannot drift apart. Both providers require **exact** model
+identifiers - a floating alias would silently change the wording of every message sent. When no key is set,
+or while `INSTAGRAM_MODE=simulated`, the simulated model stands in so a dry run cannot spend money.
+
 ## Commands
 
 | Command | Purpose |
@@ -33,6 +41,7 @@ src/features/experiments  A/B assignment, metrics, adaptation
 src/features/dashboard    read queries and operations backing the panel
 src/integrations/instagram official Graph API client, webhook signature and service
 src/integrations/browser  Playwright/CDP client (not wired into the worker, see below)
+src/integrations/anthropic Claude decision model (default provider)
 src/integrations/openai   decision model, prompts, budget accounting, claim policy
 src/db                    schema, migrations, backup
 src/worker                durable job store, runner, handlers, circuit breaker

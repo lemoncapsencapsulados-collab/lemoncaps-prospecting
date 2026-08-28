@@ -2,6 +2,10 @@ import { z } from "zod";
 
 export const integrationModes = ["simulated", "dry_run", "live"] as const;
 
+export const aiProviders = ["anthropic", "openai"] as const;
+
+export type AiProvider = (typeof aiProviders)[number];
+
 export type IntegrationMode = (typeof integrationModes)[number];
 
 const booleanString = z
@@ -22,6 +26,13 @@ const optionalPositiveNumber = z.preprocess(
 const rawEnvSchema = z.object({
   DATABASE_URL: z.string().trim().min(1),
   BUSINESS_CONFIG_PATH: z.string().trim().min(1).default("config/business.json"),
+  AI_PROVIDER: z.enum(aiProviders).default("anthropic"),
+  ANTHROPIC_API_KEY: optionalSecret,
+  ANTHROPIC_MODEL: optionalSecret,
+  ANTHROPIC_MODEL_FAST: optionalSecret,
+  ANTHROPIC_INPUT_USD_PER_MILLION: optionalPositiveNumber,
+  ANTHROPIC_OUTPUT_USD_PER_MILLION: optionalPositiveNumber,
+  ANTHROPIC_PROJECTED_CALL_COST_USD: optionalPositiveNumber,
   OPENAI_API_KEY: optionalSecret,
   OPENAI_MODEL: optionalSecret,
   OPENAI_MODEL_FAST: optionalSecret,
@@ -53,6 +64,13 @@ const rawEnvSchema = z.object({
 export interface AppEnv {
   readonly databaseUrl: string;
   readonly businessConfigPath: string;
+  readonly aiProvider: AiProvider;
+  readonly anthropicApiKey?: string;
+  readonly anthropicModel?: string;
+  readonly anthropicModelFast?: string;
+  readonly anthropicInputUsdPerMillion?: number;
+  readonly anthropicOutputUsdPerMillion?: number;
+  readonly anthropicProjectedCallCostUsd?: number;
   readonly openAiApiKey?: string;
   readonly openAiModel?: string;
   readonly openAiModelFast?: string;
@@ -82,6 +100,7 @@ export function loadEnv(source: Readonly<Record<string, string | undefined>>): A
   const env = rawEnvSchema.parse(source);
   assertLiveAuthorization(env);
   assertOpenAiConfiguration(env);
+  assertAnthropicConfiguration(env);
   assertOperationalBounds(env);
   assertLocalCdpEndpoint(env.CHROME_CDP_URL);
 
@@ -89,6 +108,13 @@ export function loadEnv(source: Readonly<Record<string, string | undefined>>): A
     databaseUrl: env.DATABASE_URL,
     businessConfigPath: env.BUSINESS_CONFIG_PATH,
     openAiApiKey: env.OPENAI_API_KEY,
+    aiProvider: env.AI_PROVIDER,
+    anthropicApiKey: env.ANTHROPIC_API_KEY,
+    anthropicModel: env.ANTHROPIC_MODEL,
+    anthropicModelFast: env.ANTHROPIC_MODEL_FAST,
+    anthropicInputUsdPerMillion: env.ANTHROPIC_INPUT_USD_PER_MILLION,
+    anthropicOutputUsdPerMillion: env.ANTHROPIC_OUTPUT_USD_PER_MILLION,
+    anthropicProjectedCallCostUsd: env.ANTHROPIC_PROJECTED_CALL_COST_USD,
     openAiModel: env.OPENAI_MODEL,
     openAiModelFast: env.OPENAI_MODEL_FAST,
     openAiMonthlyBudgetUsd: env.OPENAI_MONTHLY_BUDGET_USD,
@@ -112,6 +138,37 @@ export function loadEnv(source: Readonly<Record<string, string | undefined>>): A
     browserLiveAuthorized: env.BROWSER_LIVE_AUTHORIZED,
     instagramLiveAuthorized: env.INSTAGRAM_LIVE_AUTHORIZED,
   };
+}
+
+function assertAnthropicConfiguration(env: z.infer<typeof rawEnvSchema>): void {
+  if (env.ANTHROPIC_API_KEY && (!env.ANTHROPIC_MODEL || !env.ANTHROPIC_MODEL_FAST)) {
+    throw new Error("ANTHROPIC_MODEL and ANTHROPIC_MODEL_FAST are required when ANTHROPIC_API_KEY is configured");
+  }
+
+  for (const [name, value] of [
+    ["ANTHROPIC_MODEL", env.ANTHROPIC_MODEL],
+    ["ANTHROPIC_MODEL_FAST", env.ANTHROPIC_MODEL_FAST],
+  ] as const) {
+    if (value && !isExactAnthropicModelId(value)) {
+      throw new Error(`${name} must be an exact model identifier`);
+    }
+  }
+
+  if (
+    env.ANTHROPIC_API_KEY &&
+    (!env.ANTHROPIC_INPUT_USD_PER_MILLION ||
+      !env.ANTHROPIC_OUTPUT_USD_PER_MILLION ||
+      !env.ANTHROPIC_PROJECTED_CALL_COST_USD)
+  ) {
+    throw new Error(
+      "Anthropic pricing and projected call cost are required when ANTHROPIC_API_KEY is configured",
+    );
+  }
+}
+
+function isExactAnthropicModelId(value: string): boolean {
+  const model = value.trim().toLocaleLowerCase("en-US");
+  return !model.includes("latest") && /^claude-[a-z0-9]+(?:-[a-z0-9]+)+$/u.test(model);
 }
 
 function assertOpenAiConfiguration(env: z.infer<typeof rawEnvSchema>): void {

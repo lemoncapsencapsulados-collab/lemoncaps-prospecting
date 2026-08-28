@@ -68,17 +68,31 @@ Elas são a trava de segurança: com esses valores, nenhuma mensagem real é env
 
 ---
 
-## 3. Chave da OpenAI
+## 3. Chave da Anthropic
 
-1. Acesse <https://platform.openai.com/api-keys>.
-2. Crie a chave dentro de um **projeto separado**, só para este sistema. Assim, se precisar revogar, você não derruba nada mais.
-3. Escolha a permissão **Restricted**. Não use uma chave com permissão total.
-4. Vá em **Settings → Limits** e defina um **hard limit mensal**. Esse é o seu freio de verdade: o limite da OpenAI corta o gasto mesmo que algo dê errado do lado de cá.
-5. Cole a chave no `.env`, em `OPENAI_API_KEY`.
+O motor de conversação usa **Claude**, da Anthropic (`AI_PROVIDER=anthropic`, que é o padrão).
 
-Defina também `OPENAI_MONTHLY_BUDGET_USD`. O sistema soma o custo de cada chamada e **pausa sozinho** ao bater nesse teto — é uma segunda barreira, antes do limite da OpenAI.
+1. Acesse <https://console.anthropic.com/settings/keys>.
+2. Crie a chave dentro de um **workspace separado**, só para este sistema. Assim, se precisar revogar, você não derruba mais nada.
+3. Defina um **limite de gasto** no workspace, em **Settings → Limits**. Esse é o seu freio de verdade: o limite da Anthropic corta o gasto mesmo que algo dê errado do lado de cá.
+4. Cole a chave no `.env`, em `ANTHROPIC_API_KEY`.
 
-> Os nomes dos modelos em `OPENAI_MODEL` e `OPENAI_MODEL_FAST` precisam ser **identificadores exatos**. Apelidos que mudam sozinhos (qualquer coisa com `latest`) são recusados na inicialização, porque a qualidade das mensagens mudaria sem aviso.
+> **Nunca cole a chave em um chat, e-mail ou mensagem.** Se isso acontecer, revogue imediatamente e gere outra — uma chave exposta vale até ser revogada.
+
+Defina também `OPENAI_MONTHLY_BUDGET_USD` (o nome é herdado, mas o teto vale para qualquer provedor). O sistema soma o custo de cada chamada e **pausa sozinho** ao bater nesse valor — uma segunda barreira, antes do limite da Anthropic.
+
+Os modelos já vêm configurados:
+
+```
+ANTHROPIC_MODEL=claude-opus-5        # redação e decisão
+ANTHROPIC_MODEL_FAST=claude-haiku-4-5 # classificação e extração
+```
+
+> Os nomes precisam ser **identificadores exatos**. Apelidos que mudam sozinhos (qualquer coisa com `latest`) são recusados na inicialização, porque a qualidade das mensagens mudaria sem aviso.
+
+Os preços em `ANTHROPIC_INPUT_USD_PER_MILLION` e `ANTHROPIC_OUTPUT_USD_PER_MILLION` alimentam o custo por lead no painel. Estão nos valores do Opus 5 (5 e 25 dólares por 1M de tokens); como o modelo rápido custa menos, a estimativa é conservadora.
+
+**Para usar OpenAI no lugar:** troque `AI_PROVIDER=openai` e preencha as variáveis `OPENAI_*`. As duas implementações passam pelos mesmos testes.
 
 ---
 
@@ -141,18 +155,30 @@ Para restaurar:
 
 ---
 
-## 7. Se a chave da OpenAI vazar
+## 7. Se uma chave vazar
 
-Nesta ordem:
+Vale para chave colada em chat, e-mail, print, commit ou qualquer lugar fora do `.env`. **Uma chave exposta continua válida até ser revogada** — revogar vem antes de qualquer investigação.
 
-1. Vá em <https://platform.openai.com/api-keys> e **revogue a chave** imediatamente. Isso vem antes de qualquer investigação.
-2. Crie uma chave nova, no mesmo projeto restrito, e atualize o `.env`.
-3. Confira o consumo em **Usage** no painel da OpenAI, procurando gasto que não foi seu.
-4. Verifique se a chave não foi parar em algum commit:
-   ```bash
-   git log -p --all -S "sk-"
-   ```
-   Se tiver ido, revogar já resolveu o risco — mas troque também qualquer outro segredo que estivesse no mesmo arquivo.
+**Anthropic** (provedor padrão):
+
+1. Vá em <https://console.anthropic.com/settings/keys> e **apague a chave**.
+2. Gere outra e atualize `ANTHROPIC_API_KEY` no `.env`.
+3. Confira o consumo em **Usage**, procurando gasto que não foi seu.
+
+**OpenAI** (se estiver usando `AI_PROVIDER=openai`):
+
+1. Vá em <https://platform.openai.com/api-keys> e **revogue a chave**.
+2. Gere outra no mesmo projeto restrito e atualize `OPENAI_API_KEY`.
+3. Confira o consumo em **Usage**.
+
+Depois, nos dois casos, verifique se a chave foi parar em algum commit:
+
+```bash
+git log -p --all -S "sk-ant-"   # Anthropic
+git log -p --all -S "sk-proj-"  # OpenAI
+```
+
+Se tiver ido, revogar já resolveu o risco — mas troque também qualquer outro segredo que estivesse no mesmo arquivo. Lembre que o repositório é **público**: qualquer coisa commitada fica visível e pode ter sido copiada ou indexada.
 
 O `.gitignore` já bloqueia `.env`, `config/business.json`, o banco e as pastas de dados. Não force o commit desses arquivos com `git add -f`.
 

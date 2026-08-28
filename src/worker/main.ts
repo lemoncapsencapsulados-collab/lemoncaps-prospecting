@@ -2,9 +2,8 @@ import { randomUUID } from "node:crypto";
 
 import { createDatabase } from "../db/client.ts";
 import { migrateDatabase } from "../db/migrate.ts";
+import { createDecisionModel, resolveAiConfig } from "../integrations/ai-provider.ts";
 import { SimulatedBrowserClient } from "../integrations/browser/simulated-browser-client.ts";
-import { OpenAiDecisionModel } from "../integrations/openai/client.ts";
-import { SimulatedDecisionModel } from "../integrations/openai/simulated-decision-model.ts";
 import { loadBusinessConfig } from "../lib/business-config.ts";
 import { loadEnv } from "../lib/env.ts";
 import { createJobHandlers } from "./handlers.ts";
@@ -18,10 +17,8 @@ migrateDatabase(database);
 
 const workerId = `worker-${randomUUID()}`;
 
-const decisionModel =
-  env.openAiApiKey && env.instagramMode !== "simulated"
-    ? OpenAiDecisionModel.fromApiKey(env.openAiApiKey)
-    : new SimulatedDecisionModel();
+const aiConfig = resolveAiConfig(env);
+const decisionModel = createDecisionModel(env, aiConfig);
 
 const operations = createRuntimeJobOperations({
   database,
@@ -29,11 +26,10 @@ const operations = createRuntimeJobOperations({
   env,
   browserClient: new SimulatedBrowserClient(),
   decisionModel,
-  aiPricing: {
-    inputPerMillionUsd: env.openAiInputUsdPerMillion ?? 0,
-    outputPerMillionUsd: env.openAiOutputUsdPerMillion ?? 0,
-  },
-  projectedAiCallCostUsd: env.openAiProjectedCallCostUsd ?? 0,
+  aiModel: aiConfig.model,
+  aiModelFast: aiConfig.modelFast,
+  aiPricing: aiConfig.pricing,
+  projectedAiCallCostUsd: aiConfig.projectedCallCostUsd,
   workerId,
 });
 
@@ -61,8 +57,9 @@ process.once("SIGTERM", () => {
 
 process.stdout.write(`Worker ready: ${env.databaseUrl}\n`);
 process.stdout.write(
-  `Modelo de decisão: ${decisionModel instanceof SimulatedDecisionModel ? "simulado" : "OpenAI"}\n`,
+  `Provedor de IA: ${aiConfig.provider}${aiConfig.simulated ? " (simulado — sem chave)" : ""}\n`,
 );
+process.stdout.write(`Modelos: ${aiConfig.model} / ${aiConfig.modelFast}\n`);
 process.stdout.write(`Handlers ativos: ${Object.keys(handlers).join(", ")}\n`);
 
 while (!stopping) {

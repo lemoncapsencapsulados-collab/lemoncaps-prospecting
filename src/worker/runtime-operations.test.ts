@@ -40,6 +40,8 @@ describe("runtime job operations", () => {
       }),
       browserClient: new SimulatedBrowserClient(),
       decisionModel: new SimulatedDecisionModel(),
+      aiModel: 'gpt-5.6-sol',
+      aiModelFast: 'gpt-5.6-luna',
       aiPricing: { inputPerMillionUsd: 0, outputPerMillionUsd: 0 },
       projectedAiCallCostUsd: 0,
       workerId: "runtime-worker",

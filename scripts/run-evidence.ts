@@ -22,6 +22,7 @@ import {
 import { handleInboundConversation } from "../src/features/conversations/conversation-service.ts";
 import { createInstagramSignature } from "../src/integrations/instagram/signature.ts";
 import { processInstagramWebhook } from "../src/integrations/instagram/webhook-service.ts";
+import { resolveAiConfig } from "../src/integrations/ai-provider.ts";
 import { SimulatedDecisionModel } from "../src/integrations/openai/simulated-decision-model.ts";
 import type { PublicProfileObservation } from "../src/features/leads/types.ts";
 import { loadBusinessConfig } from "../src/lib/business-config.ts";
@@ -33,6 +34,7 @@ const now = new Date();
 
 const env = loadEnv(process.env);
 const business = loadBusinessConfig(env.businessConfigPath);
+const aiConfig = resolveAiConfig(env);
 const database = createDatabase(env.databaseUrl);
 migrateDatabase(database);
 
@@ -161,14 +163,11 @@ if (!inboundMessage) {
       database,
       business,
       model: new SimulatedDecisionModel(),
-      fastModel: env.openAiModelFast ?? "simulated-fast",
-      mainModel: env.openAiModel ?? "simulated-main",
+      fastModel: aiConfig.modelFast,
+      mainModel: aiConfig.model,
       monthlyBudgetUsd: env.openAiMonthlyBudgetUsd,
-      pricing: {
-        inputPerMillionUsd: env.openAiInputUsdPerMillion ?? 0,
-        outputPerMillionUsd: env.openAiOutputUsdPerMillion ?? 0,
-      },
-      projectedCallCostUsd: env.openAiProjectedCallCostUsd ?? 0,
+      pricing: aiConfig.pricing,
+      projectedCallCostUsd: aiConfig.projectedCallCostUsd,
       now: () => now,
     },
     { leadId: replyingLead.id, messageId: inboundMessage.id, correlationId: `evidence-inbound` },
