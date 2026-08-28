@@ -1,0 +1,49 @@
+{
+  "name": "instagram-prospecting-operator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "evidence": "tsx scripts/run-evidence.ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "13.0.3",
+    "drizzle-orm": "0.45.2",
+    "next": "16.3.3",
+    "openai": "7.8.0",
+    "playwright": "1.62.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "0.0.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "@types/better-sqlite3": "9.6.0",
+    "@types/node": "26.4.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "concurrently": "10.0.5",
+    "drizzle-kit": "0.31.10",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.3",
+    "postcss": "8.5.26",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.12",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "vitest": "4.1.11"
+  }
+}

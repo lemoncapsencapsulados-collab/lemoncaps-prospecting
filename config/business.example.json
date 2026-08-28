@@ -1,0 +1,21 @@
+{
+  "ownerName": "{{OWNER_NAME}}",
+  "ownerRole": "{{OWNER_ROLE}}",
+  "companyName": "{{COMPANY_NAME}}",
+  "companyWebsite": "{{COMPANY_WEBSITE}}",
+  "instagramHandle": "{{INSTAGRAM_HANDLE}}",
+  "whatsappLink": "{{WHATSAPP_LINK}}",
+  "affiliateGroupLink": null,
+  "oneLinePitch": "{{ONE_LINE_PITCH}}",
+  "howItWorks": ["{{HOW_IT_WORKS_STEP_1}}", "{{HOW_IT_WORKS_STEP_2}}"],
+  "revenueModel": "{{REVENUE_MODEL}}",
+  "marketJargon": {
+    "{{TERM}}": "{{VERIFIED_DEFINITION}}"
+  },
+  "verifiedClaims": ["{{VERIFIED_CLAIM}}"],
+  "unverifiedClaims": ["{{UNVERIFIED_CLAIM}}"],
+  "icpSegments": ["{{ICP_SEGMENT}}"],
+  "icpKeywords": ["{{ICP_KEYWORD}}"],
+  "affiliateTopics": ["{{AFFILIATE_TOPIC}}"],
+  "geography": "{{GEOGRAPHY}}"
+}

@@ -1,0 +1,21 @@
+{
+  "ownerName": "Pessoa Operadora",
+  "ownerRole": "Administrador",
+  "companyName": "Empresa de Exemplo Ltda.",
+  "companyWebsite": "https://example.com",
+  "instagramHandle": "@empresa.exemplo",
+  "whatsappLink": "https://wa.me/5500000000000",
+  "affiliateGroupLink": null,
+  "oneLinePitch": "Descrição comercial verificada da empresa.",
+  "howItWorks": ["O cliente define a necessidade", "A empresa executa o serviço"],
+  "revenueModel": "Prestação de serviços e comercialização de produtos.",
+  "marketJargon": {
+    "termo": "definição verificada"
+  },
+  "verifiedClaims": ["Afirmação comercial verificada"],
+  "unverifiedClaims": ["Resultado garantido"],
+  "icpSegments": ["Segmento de exemplo"],
+  "icpKeywords": ["palavra-chave"],
+  "affiliateTopics": ["Tema de exemplo"],
+  "geography": "Brasil"
+}

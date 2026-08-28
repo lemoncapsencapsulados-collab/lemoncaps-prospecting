@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --ink: #172016;
+  --muted: #60705d;
+  --paper: #f7f5ec;
+  --lemon: #d8f253;
+  --line: #d9ddce;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgb(216 242 83 / 35%), transparent 35rem),
+    var(--paper);
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.shell {
+  width: min(960px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 8rem 0 4rem;
+}
+
+.eyebrow {
+  margin: 0 0 1rem;
+  color: #52620a;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+h1 {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(3rem, 10vw, 7rem);
+  line-height: 0.92;
+  letter-spacing: -0.07em;
+}
+
+.subtitle {
+  max-width: 42rem;
+  margin: 2rem 0;
+  color: var(--muted);
+  font-size: 1.15rem;
+  line-height: 1.65;
+}
+
+.status-card {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  max-width: 40rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 70%);
+  box-shadow: 0 1.5rem 4rem rgb(23 32 22 / 8%);
+}
+
+.status-card p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+}
+
+.status-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-top: 0.2rem;
+  border-radius: 50%;
+  background: #7ea20b;
+  box-shadow: 0 0 0 0.3rem rgb(126 162 11 / 15%);
+}
