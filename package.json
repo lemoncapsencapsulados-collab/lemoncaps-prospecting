@@ -15,8 +15,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate": "tsx src/db/migrate.ts",
-    "evidence": "tsx scripts/run-evidence.ts"
+    "db:migrate": "node src/db/migrate.ts",
+    "evidence": "node scripts/run-evidence.ts"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",
@@ -42,7 +42,6 @@
     "eslint-config-next": "16.3.3",
     "postcss": "8.5.26",
     "tailwindcss": "4.3.3",
-    "tsx": "4.23.12",
     "typescript": "npm:@typescript/typescript6@6.0.2",
     "vitest": "4.1.11"
   }
