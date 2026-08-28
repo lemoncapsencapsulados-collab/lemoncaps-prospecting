@@ -70,6 +70,7 @@ export interface AppEnv {
 export function loadEnv(source: Readonly<Record<string, string | undefined>>): AppEnv {
   const env = rawEnvSchema.parse(source);
   assertLiveAuthorization(env);
+  assertOpenAiConfiguration(env);
   assertOperationalBounds(env);
   assertLocalCdpEndpoint(env.CHROME_CDP_URL);
 
@@ -97,6 +98,30 @@ export function loadEnv(source: Readonly<Record<string, string | undefined>>): A
     browserLiveAuthorized: env.BROWSER_LIVE_AUTHORIZED,
     instagramLiveAuthorized: env.INSTAGRAM_LIVE_AUTHORIZED,
   };
+}
+
+function assertOpenAiConfiguration(env: z.infer<typeof rawEnvSchema>): void {
+  if (env.OPENAI_API_KEY && (!env.OPENAI_MODEL || !env.OPENAI_MODEL_FAST)) {
+    throw new Error("OPENAI_MODEL and OPENAI_MODEL_FAST are required when OPENAI_API_KEY is configured");
+  }
+
+  for (const [name, value] of [
+    ["OPENAI_MODEL", env.OPENAI_MODEL],
+    ["OPENAI_MODEL_FAST", env.OPENAI_MODEL_FAST],
+  ] as const) {
+    if (value && !isExactOpenAiModelId(value)) {
+      throw new Error(`${name} must be an exact model identifier`);
+    }
+  }
+}
+
+function isExactOpenAiModelId(value: string): boolean {
+  const model = value.trim().toLocaleLowerCase("en-US");
+  return (
+    !model.includes("latest") &&
+    !/^gpt-\d+(?:\.\d+)?$/u.test(model) &&
+    /^gpt-[a-z0-9]+(?:[.-][a-z0-9]+)+(?:-[a-z0-9]+)*$/u.test(model)
+  );
 }
 
 function assertLiveAuthorization(env: z.infer<typeof rawEnvSchema>): void {
