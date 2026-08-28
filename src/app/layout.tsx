@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Archivo, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
@@ -7,6 +8,11 @@ import { getServerContext } from "@/lib/server-context";
 import { OptionalLink } from "./_components/optional-link.tsx";
 
 import "./globals.css";
+
+/* Self-hosted at build time: no request to Google on load, no layout shift. */
+const archivo = Archivo({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-display" });
+const plexSans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-body" });
+const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "Central de Prospecção",
@@ -19,7 +25,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   const instagramUrl = `https://instagram.com/${business.instagramHandle.replace(/^@/, "")}`;
 
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={`${archivo.variable} ${plexSans.variable} ${plexMono.variable}`}>
       <body>
         <div className="app">
           <aside className="sidebar">

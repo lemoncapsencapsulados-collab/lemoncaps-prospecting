@@ -53,11 +53,13 @@ export function resolveAiConfig(env: AppEnv): ResolvedAiConfig {
 }
 
 /**
- * Falls back to the simulated model whenever the provider has no key or the
- * Instagram integration is still simulated, so a dry run never spends money.
+ * Which model decides and whether a message is actually sent are separate
+ * concerns: the send gate is INSTAGRAM_MODE, checked at send time. Tying them
+ * together made it impossible to review the real model's wording without also
+ * enabling live sending, so the only gate here is whether a key exists.
  */
 export function createDecisionModel(env: AppEnv, config: ResolvedAiConfig): DecisionModel {
-  if (config.simulated || env.instagramMode === "simulated") {
+  if (config.simulated) {
     return new SimulatedDecisionModel();
   }
 

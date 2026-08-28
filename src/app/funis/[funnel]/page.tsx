@@ -62,7 +62,7 @@ export default async function FunnelPage({ params }: PageProps) {
                     <span className="handle">{card.instagramHandle}</span>
                     <div className="kanban-card-meta">
                       <span className="badge badge-neutral">{channelStateLabels[card.channelState]}</span>
-                      <span className="badge">Score {formatInteger(card.score)}</span>
+                      <span className="score">{formatInteger(card.score)}</span>
                     </div>
                     {card.nextActionAt ? (
                       <p className="muted" style={{ margin: "0.5rem 0 0", fontSize: "0.8rem" }}>

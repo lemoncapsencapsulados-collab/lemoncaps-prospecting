@@ -140,9 +140,12 @@ describe("provider resolution", () => {
     });
   });
 
-  it("still uses the simulated model while Instagram is simulated, so a dry run cannot spend", () => {
+  it("uses the real model whenever a key exists, independently of the send mode", () => {
+    // Reviewing the real model's wording must not require enabling live sending;
+    // INSTAGRAM_MODE gates the send itself, not the decision.
     const env = loadEnv({
       DATABASE_URL: ":memory:",
+      INSTAGRAM_MODE: "simulated",
       ANTHROPIC_API_KEY: "test-key",
       ANTHROPIC_MODEL: "claude-opus-5",
       ANTHROPIC_MODEL_FAST: "claude-haiku-4-5",
@@ -150,6 +153,12 @@ describe("provider resolution", () => {
       ANTHROPIC_OUTPUT_USD_PER_MILLION: "25",
       ANTHROPIC_PROJECTED_CALL_COST_USD: "0.02",
     });
+
+    expect(createDecisionModel(env, resolveAiConfig(env))).toBeInstanceOf(AnthropicDecisionModel);
+  });
+
+  it("falls back to the simulated model when no key is configured", () => {
+    const env = loadEnv({ DATABASE_URL: ":memory:" });
 
     expect(createDecisionModel(env, resolveAiConfig(env))).toBeInstanceOf(SimulatedDecisionModel);
   });
