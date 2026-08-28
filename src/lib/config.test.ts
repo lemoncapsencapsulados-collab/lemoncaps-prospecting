@@ -36,6 +36,9 @@ describe("configuration", () => {
         OPENAI_API_KEY: "test-key",
         OPENAI_MODEL: "gpt-5.6-sol",
         OPENAI_MODEL_FAST: "gpt-5.6-luna",
+        OPENAI_INPUT_USD_PER_MILLION: "2",
+        OPENAI_OUTPUT_USD_PER_MILLION: "8",
+        OPENAI_PROJECTED_CALL_COST_USD: "0.05",
       }),
     ).toMatchObject({ openAiModel: "gpt-5.6-sol", openAiModelFast: "gpt-5.6-luna" });
   });

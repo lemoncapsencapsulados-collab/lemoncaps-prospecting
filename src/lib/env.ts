@@ -14,6 +14,11 @@ const optionalSecret = z
   .optional()
   .transform((value) => (value ? value : undefined));
 
+const optionalPositiveNumber = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z.coerce.number().positive().optional(),
+);
+
 const rawEnvSchema = z.object({
   DATABASE_URL: z.string().trim().min(1),
   BUSINESS_CONFIG_PATH: z.string().trim().min(1).default("config/business.json"),
@@ -21,6 +26,9 @@ const rawEnvSchema = z.object({
   OPENAI_MODEL: optionalSecret,
   OPENAI_MODEL_FAST: optionalSecret,
   OPENAI_MONTHLY_BUDGET_USD: z.coerce.number().nonnegative().default(25),
+  OPENAI_INPUT_USD_PER_MILLION: optionalPositiveNumber,
+  OPENAI_OUTPUT_USD_PER_MILLION: optionalPositiveNumber,
+  OPENAI_PROJECTED_CALL_COST_USD: optionalPositiveNumber,
   CHROME_CDP_URL: z.url().default("http://127.0.0.1:9222"),
   CHROME_PROFILE_DIR: z.string().trim().min(1).default(".chrome-profile"),
   INSTAGRAM_APP_SECRET: optionalSecret,
@@ -49,6 +57,9 @@ export interface AppEnv {
   readonly openAiModel?: string;
   readonly openAiModelFast?: string;
   readonly openAiMonthlyBudgetUsd: number;
+  readonly openAiInputUsdPerMillion?: number;
+  readonly openAiOutputUsdPerMillion?: number;
+  readonly openAiProjectedCallCostUsd?: number;
   readonly chromeCdpUrl: string;
   readonly chromeProfileDir: string;
   readonly instagramAppSecret?: string;
@@ -81,6 +92,9 @@ export function loadEnv(source: Readonly<Record<string, string | undefined>>): A
     openAiModel: env.OPENAI_MODEL,
     openAiModelFast: env.OPENAI_MODEL_FAST,
     openAiMonthlyBudgetUsd: env.OPENAI_MONTHLY_BUDGET_USD,
+    openAiInputUsdPerMillion: env.OPENAI_INPUT_USD_PER_MILLION,
+    openAiOutputUsdPerMillion: env.OPENAI_OUTPUT_USD_PER_MILLION,
+    openAiProjectedCallCostUsd: env.OPENAI_PROJECTED_CALL_COST_USD,
     chromeCdpUrl: env.CHROME_CDP_URL,
     chromeProfileDir: env.CHROME_PROFILE_DIR,
     instagramAppSecret: env.INSTAGRAM_APP_SECRET,
@@ -112,6 +126,17 @@ function assertOpenAiConfiguration(env: z.infer<typeof rawEnvSchema>): void {
     if (value && !isExactOpenAiModelId(value)) {
       throw new Error(`${name} must be an exact model identifier`);
     }
+  }
+
+  if (
+    env.OPENAI_API_KEY &&
+    (!env.OPENAI_INPUT_USD_PER_MILLION ||
+      !env.OPENAI_OUTPUT_USD_PER_MILLION ||
+      !env.OPENAI_PROJECTED_CALL_COST_USD)
+  ) {
+    throw new Error(
+      "OpenAI pricing and projected call cost are required when OPENAI_API_KEY is configured",
+    );
   }
 }
 

@@ -8,15 +8,15 @@
     "node": ">=24.0.0 <25"
   },
   "scripts": {
-    "dev": "concurrently -k -n WEB,WORKER \"next dev\" \"node --env-file-if-exists=.env --watch src/worker/main.ts\"",
+    "dev": "concurrently -k -n WEB,WORKER \"next dev\" \"node --import ./scripts/register-aliases.mjs --env-file-if-exists=.env --watch src/worker/main.ts\"",
     "build": "next build",
-    "start": "concurrently -k -n WEB,WORKER \"next start\" \"node --env-file-if-exists=.env src/worker/main.ts\"",
+    "start": "concurrently -k -n WEB,WORKER \"next start\" \"node --import ./scripts/register-aliases.mjs --env-file-if-exists=.env src/worker/main.ts\"",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate": "node src/db/migrate.ts",
-    "evidence": "node scripts/run-evidence.ts"
+    "evidence": "node --import ./scripts/register-aliases.mjs --env-file-if-exists=.env scripts/run-evidence.ts"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",

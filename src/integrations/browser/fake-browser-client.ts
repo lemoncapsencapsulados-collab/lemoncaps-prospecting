@@ -9,7 +9,11 @@ import {
 export class FakeBrowserClient implements BrowserClient {
   public readonly events: string[] = [];
 
-  public constructor(private readonly connectionUnavailable = false) {}
+  private readonly connectionUnavailable: boolean;
+
+  public constructor(connectionUnavailable = false) {
+    this.connectionUnavailable = connectionUnavailable;
+  }
 
   public static unavailable(): FakeBrowserClient {
     return new FakeBrowserClient(true);
@@ -33,7 +37,11 @@ export class FakeBrowserClient implements BrowserClient {
 }
 
 class FakeBrowserPage implements BrowserPageClient {
-  public constructor(private readonly events: string[]) {}
+  private readonly events: string[];
+
+  public constructor(events: string[]) {
+    this.events = events;
+  }
 
   public async navigate(): Promise<void> {
     this.events.push("navigate-instagram");

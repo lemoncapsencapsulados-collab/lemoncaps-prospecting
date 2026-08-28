@@ -29,7 +29,11 @@ export interface DecisionModel {
 type ResponsesClient = Pick<OpenAI, "responses">;
 
 export class OpenAiDecisionModel implements DecisionModel {
-  constructor(private readonly client: ResponsesClient) {}
+  private readonly client: ResponsesClient;
+
+  constructor(client: ResponsesClient) {
+    this.client = client;
+  }
 
   static fromApiKey(apiKey: string): OpenAiDecisionModel {
     if (!apiKey.trim()) throw new Error("OPENAI_API_KEY is required");

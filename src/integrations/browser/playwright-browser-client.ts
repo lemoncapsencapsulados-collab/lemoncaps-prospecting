@@ -16,7 +16,11 @@ export interface PlaywrightBrowserClientOptions {
 }
 
 export class PlaywrightBrowserClient implements BrowserClient {
-  public constructor(private readonly options: PlaywrightBrowserClientOptions) {}
+  private readonly options: PlaywrightBrowserClientOptions;
+
+  public constructor(options: PlaywrightBrowserClientOptions) {
+    this.options = options;
+  }
 
   public async connect(): Promise<BrowserSessionClient> {
     try {
@@ -45,10 +49,12 @@ class PlaywrightPageClient implements BrowserPageClient {
   private readonly consoleErrors: string[] = [];
   private readonly failedRequests: Array<{ url: string; errorText: string | null }> = [];
 
-  public constructor(
-    private readonly page: Page,
-    private readonly evidenceDirectory: string,
-  ) {
+  private readonly page: Page;
+  private readonly evidenceDirectory: string;
+
+  public constructor(page: Page, evidenceDirectory: string) {
+    this.page = page;
+    this.evidenceDirectory = evidenceDirectory;
     this.page.on("console", (message) => {
       if (message.type() === "error") this.consoleErrors.push(message.text());
     });
