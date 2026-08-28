@@ -6,7 +6,7 @@
 
 **Architecture:** A single Next.js modular monolith runs a web process and a durable SQLite worker from one pnpm command. Feature modules own domain rules, integration modules expose concrete simulated/dry-run/live adapters, and transactional SQLite state plus idempotency keys coordinate all channel actions.
 
-**Tech Stack:** Node.js 24.14.1, pnpm 11.24.0, Next.js 16.3.3, React 19.2.8, TypeScript 7.0.2 strict, Tailwind CSS 4.3.3, SQLite via better-sqlite3 13.0.3, Drizzle ORM 0.45.2, Playwright 1.62.1, OpenAI SDK 7.8.0, Zod 4.4.3, and Vitest 4.1.11.
+**Tech Stack:** Node.js 24.14.1, pnpm 11.24.0, Next.js 16.3.3, React 19.2.8, TypeScript 6.0.2 strict, Tailwind CSS 4.3.3, SQLite via better-sqlite3 13.0.3, Drizzle ORM 0.45.2, Playwright 1.62.1, OpenAI SDK 7.8.0, Zod 4.4.3, and Vitest 4.1.11.
 
 **Spec:** `docs/superpowers/specs/2026-08-28-instagram-prospecting-system-design.md`
 
@@ -93,7 +93,7 @@
     "postcss": "8.5.26",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.12",
-    "typescript": "7.0.2",
+    "typescript": "6.0.2",
     "vitest": "4.1.11"
   }
 }

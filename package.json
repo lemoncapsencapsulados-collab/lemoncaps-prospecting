@@ -8,9 +8,9 @@
     "node": ">=24.0.0 <25"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently -k -n WEB,WORKER \"next dev\" \"node --env-file-if-exists=.env --watch src/worker/main.ts\"",
     "build": "next build",
-    "start": "next start",
+    "start": "concurrently -k -n WEB,WORKER \"next start\" \"node --env-file-if-exists=.env src/worker/main.ts\"",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -31,7 +31,6 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
-    "@typescript/native": "npm:typescript@7.0.2",
     "@types/better-sqlite3": "9.6.0",
     "@types/node": "26.4.0",
     "@types/react": "19.2.18",
@@ -42,7 +41,7 @@
     "eslint-config-next": "16.3.3",
     "postcss": "8.5.26",
     "tailwindcss": "4.3.3",
-    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "typescript": "6.0.2",
     "vitest": "4.1.11"
   }
 }
